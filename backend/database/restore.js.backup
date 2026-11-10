@@ -1,0 +1,79 @@
+// database/restore.js
+const { exec } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const readline = require('readline');
+require('dotenv').config();
+
+async function restoreDatabase() {
+    const backupDir = path.join(__dirname, 'backups');
+
+    if (!fs.existsSync(backupDir)) {
+        console.log('❌ No backups directory found');
+        return;
+    }
+
+    const backups = fs.readdirSync(backupDir)
+        .filter(file => file.endsWith('.sql'))
+        .sort()
+        .reverse();
+
+    if (backups.length === 0) {
+        console.log('❌ No backup files found');
+        return;
+    }
+
+    console.log('\n📊 Available backups:');
+    backups.forEach((file, index) => {
+        const stats = fs.statSync(path.join(backupDir, file));
+        console.log(`   ${index + 1}. ${file} (${(stats.size / 1024).toFixed(2)} KB)`);
+    });
+
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    rl.question('\nSelect backup number to restore (or "cancel"): ', (answer) => {
+        if (answer.toLowerCase() === 'cancel') {
+            console.log('❌ Restore cancelled.');
+            rl.close();
+            return;
+        }
+
+        const index = parseInt(answer) - 1;
+        if (isNaN(index) || index < 0 || index >= backups.length) {
+            console.log('❌ Invalid selection.');
+            rl.close();
+            return;
+        }
+
+        const backupFile = path.join(backupDir, backups[index]);
+
+        console.log(`\n⚠️  WARNING: This will overwrite the database!`);
+        rl.question('Type "RESTORE" to confirm: ', (confirm) => {
+            if (confirm !== 'RESTORE') {
+                console.log('❌ Restore cancelled.');
+                rl.close();
+                return;
+            }
+
+            console.log(`\n🔄 Restoring from: ${backupFile}`);
+
+            const command = `mysql -h ${process.env.DB_HOST} -u ${process.env.DB_USER} -p${process.env.DB_PASS} ${process.env.DB_NAME} < ${backupFile}`;
+
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    console.error('❌ Restore failed:', error.message);
+                } else {
+                    console.log('✅ Database restored successfully!');
+                }
+                rl.close();
+            });
+        });
+    });
+}
+
+if (require.main === module) {
+    restoreDatabase();
+}

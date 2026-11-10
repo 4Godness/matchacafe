@@ -1,0 +1,64 @@
+// database/seed.js
+const db = require('./connection');
+
+async function seedDatabase() {
+    console.log('\n🌱 Seeding database with sample data...\n');
+
+    try {
+        // Seed categories
+        const categories = [
+            ['Coffee', 'Various coffee drinks', true],
+            ['Tea', 'Traditional and modern tea drinks', true],
+            ['Matcha', 'Specialty matcha drinks', true],
+            ['Pastry', 'Freshly baked pastries', true],
+            ['Dessert', 'Sweet desserts and cakes', true]
+        ];
+
+        console.log('📦 Inserting categories...');
+        for (const category of categories) {
+            await db.execute(
+                'INSERT IGNORE INTO categories (name, description, is_active) VALUES (?, ?, ?)',
+                category
+            );
+        }
+        console.log('✅ Categories seeded');
+
+        // Seed products
+        const products = [
+            ['Classic Matcha', 'Traditional Japanese matcha tea', 25000, 'Matcha', 'matcha_classic.jpg', 50],
+            ['Matcha Latte', 'Creamy matcha with steamed milk', 35000, 'Matcha', 'matcha_latte.jpg', 30],
+            ['Iced Matcha', 'Refreshing cold matcha drink', 30000, 'Matcha', 'matcha_iced.jpg', 40],
+            ['Matcha Frappe', 'Blended matcha with ice cream', 40000, 'Matcha', 'matcha_frappe.jpg', 25],
+            ['Espresso', 'Strong black coffee', 20000, 'Coffee', 'espresso.jpg', 60],
+            ['Cappuccino', 'Espresso with steamed milk foam', 30000, 'Coffee', 'cappuccino.jpg', 45],
+            ['Latte', 'Smooth coffee with lots of milk', 32000, 'Coffee', 'latte.jpg', 50],
+            ['Green Tea', 'Traditional Japanese green tea', 18000, 'Tea', 'green_tea.jpg', 70],
+            ['Black Tea', 'Strong black tea', 18000, 'Tea', 'black_tea.jpg', 65],
+            ['Croissant', 'Buttery French croissant', 25000, 'Pastry', 'croissant.jpg', 20],
+            ['Chocolate Cake', 'Rich chocolate cake slice', 35000, 'Dessert', 'chocolate_cake.jpg', 15],
+            ['Cheesecake', 'Creamy New York cheesecake', 40000, 'Dessert', 'cheesecake.jpg', 12]
+        ];
+
+        console.log('\n📦 Inserting products...');
+        for (const product of products) {
+            await db.execute(
+                `INSERT IGNORE INTO products 
+                 (name, description, price, category, image_url, stock) 
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                product
+            );
+        }
+        console.log(`✅ ${products.length} products seeded`);
+
+        console.log('\n🎉 Database seeding completed!');
+
+    } catch (error) {
+        console.error('❌ Seeding failed:', error.message);
+    }
+}
+
+if (require.main === module) {
+    seedDatabase();
+}
+
+module.exports = seedDatabase;

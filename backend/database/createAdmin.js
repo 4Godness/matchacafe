@@ -1,0 +1,423 @@
+﻿// database/createAdmin.js - ES Module version
+import mysql from 'mysql2/promise';
+import bcrypt from 'bcryptjs';
+import readline from 'readline';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import dotenv from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config();
+
+class AdminCreator {
+    constructor() {
+        this.config = {
+            host: process.env.DB_HOST || 'localhost',
+            user: process.env.DB_USER || 'root',
+            password: process.env.DB_PASS || '',
+            database: process.env.DB_NAME || 'matcha_app',
+            port: process.env.DB_PORT || 3306
+        };
+
+        this.rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+    }
+
+    async run() {
+        console.clear();
+        console.log('══════════════════════════════════════════');
+        console.log('👑  MATCHA CAFE - ADMIN ACCOUNT CREATOR');
+        console.log('══════════════════════════════════════════\n');
+
+        try {
+            // Step 1: Connect to database
+            const connection = await this.connectToDatabase();
+
+            // Step 2: Check if admin already exists
+            await this.checkExistingAdmin(connection);
+
+            // Step 3: Ask for admin details
+            const adminData = await this.getAdminDetails();
+
+            // Step 4: Generate password hash
+            const { hashedPassword, salt } = await this.generatePasswordHash(adminData.password);
+
+            // Step 5: Insert admin into database
+            await this.insertAdminUser(connection, adminData, hashedPassword);
+
+            // Step 6: Show success message and SQL
+            await this.showSuccessInfo(adminData, hashedPassword, salt);
+
+            // Step 7: Test the admin account
+            await this.testAdminAccount(connection, adminData.email);
+
+            await connection.end();
+
+            console.log('\n✅ Admin account creation completed!\n');
+
+        } catch (error) {
+            console.error('\n❌ Admin creation failed:', error.message);
+            if (error.code === 'ER_ACCESS_DENIED_ERROR') {
+                console.log('\n💡 Check your MySQL credentials in .env file:');
+                console.log(`   DB_HOST=${this.config.host}`);
+                console.log(`   DB_USER=${this.config.user}`);
+                console.log(`   DB_NAME=${this.config.database}`);
+            }
+            process.exit(1);
+        } finally {
+            this.rl.close();
+        }
+    }
+
+    async connectToDatabase() {
+        console.log('🔗 Connecting to database...');
+
+        try {
+            const connection = await mysql.createConnection({
+                host: this.config.host,
+                user: this.config.user,
+                password: this.config.password,
+                database: this.config.database,
+                port: this.config.port
+            });
+
+            console.log(`✅ Connected to: ${this.config.database}@${this.config.host}`);
+            return connection;
+
+        } catch (error) {
+            console.error('❌ Database connection failed');
+
+            // Try without database first (create if not exists)
+            if (error.code === 'ER_BAD_DB_ERROR') {
+                console.log('ℹ️  Database not found, creating it...');
+                return await this.createDatabase();
+            }
+
+            throw error;
+        }
+    }
+
+    async createDatabase() {
+        try {
+            // Connect without database
+            const connection = await mysql.createConnection({
+                host: this.config.host,
+                user: this.config.user,
+                password: this.config.password,
+                port: this.config.port
+            });
+
+            // Create database
+            await connection.execute(
+                `CREATE DATABASE IF NOT EXISTS ${this.config.database} 
+                 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+            );
+
+            console.log(`✅ Created database: ${this.config.database}`);
+
+            // Use the database
+            await connection.execute(`USE ${this.config.database}`);
+
+            return connection;
+
+        } catch (error) {
+            throw new Error(`Failed to create database: ${error.message}`);
+        }
+    }
+
+    async checkExistingAdmin(connection) {
+        try {
+            // Check if users table exists
+            const [tables] = await connection.execute(
+                `SHOW TABLES LIKE 'users'`
+            );
+
+            if (tables.length === 0) {
+                console.log('ℹ️  Users table not found, will create admin in new table');
+                return;
+            }
+
+            // Check for existing admin
+            const [admins] = await connection.execute(
+                `SELECT id, name, email, role FROM users WHERE role = 'admin' OR email LIKE '%admin%'`
+            );
+
+            if (admins.length > 0) {
+                console.log('\n⚠️  Existing admin accounts found:');
+                admins.forEach((admin, index) => {
+                    console.log(`   ${index + 1}. ${admin.name} (${admin.email}) - ${admin.role}`);
+                });
+
+                const answer = await this.askQuestion('\nDo you want to create another admin? (y/N): ');
+                if (answer.toLowerCase() !== 'y') {
+                    console.log('Operation cancelled.');
+                    process.exit(0);
+                }
+            }
+
+        } catch (error) {
+            console.log('ℹ️  Could not check existing admins:', error.message);
+        }
+    }
+
+    async getAdminDetails() {
+        console.log('\n📝 Enter admin account details:');
+
+        const name = await this.askQuestion('   Name (default: Admin): ') || 'Admin';
+        const email = await this.askQuestion('   Email (default: admin@matcha.com): ') || 'admin@matcha.com';
+        const phone = await this.askQuestion('   Phone (default: 08123456789): ') || '08123456789';
+
+        let password, confirmPassword;
+        do {
+            password = await this.askQuestion('   Password (default: admin123): ', true) || 'admin123';
+            confirmPassword = await this.askQuestion('   Confirm password: ', true);
+
+            if (password !== confirmPassword) {
+                console.log('   ❌ Passwords do not match. Please try again.\n');
+            }
+        } while (password !== confirmPassword);
+
+        return { name, email, phone, password };
+    }
+
+    askQuestion(query, hideInput = false) {
+        return new Promise((resolve) => {
+            if (hideInput) {
+                // Simpan referensi untuk readline
+                const rl = this.rl;
+
+                // Backup fungsi question asli
+                const originalQuestion = rl.question;
+
+                rl.question = (q, callback) => {
+                    // Mask input untuk password
+                    const stdin = process.openStdin();
+                    let input = '';
+
+                    process.stdin.on('data', (char) => {
+                        char = char.toString();
+                        switch (char) {
+                            case '\n':
+                            case '\r':
+                            case '\u0004':
+                                stdin.pause();
+                                break;
+                            default:
+                                process.stdout.write('\x1B[2K\x1B[200D' + query + '*'.repeat(input.length + 1));
+                                input += char.replace(/\r?\n|\r/g, '');
+                                break;
+                        }
+                    });
+
+                    originalQuestion.call(rl, query, (value) => {
+                        rl.question = originalQuestion; // Restore
+                        callback(input);
+                    });
+                };
+
+                rl.question(query, (value) => {
+                    resolve(value);
+                });
+            } else {
+                this.rl.question(query, (value) => {
+                    resolve(value);
+                });
+            }
+        });
+    }
+
+    async generatePasswordHash(password) {
+        console.log('\n🔐 Generating password hash...');
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        console.log('✅ Password hash generated');
+        console.log(`   Salt: ${salt.substring(0, 20)}...`);
+        console.log(`   Hash: ${hashedPassword.substring(0, 30)}...`);
+
+        return { hashedPassword, salt };
+    }
+
+    async insertAdminUser(connection, adminData, hashedPassword) {
+        console.log('\n💾 Inserting admin into database...');
+
+        try {
+            // First, ensure users table exists
+            await this.ensureUsersTable(connection);
+
+            // Insert admin user
+            const [result] = await connection.execute(
+                `INSERT INTO users (name, email, password, phone, role, is_active) 
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [adminData.name, adminData.email, hashedPassword, adminData.phone, 'admin', true]
+            );
+
+            console.log(`✅ Admin inserted with ID: ${result.insertId}`);
+
+        } catch (error) {
+            if (error.code === 'ER_DUP_ENTRY') {
+                console.log('⚠️  Admin email already exists, updating instead...');
+
+                await connection.execute(
+                    `UPDATE users 
+                     SET name = ?, password = ?, phone = ?, role = 'admin', is_active = true
+                     WHERE email = ?`,
+                    [adminData.name, hashedPassword, adminData.phone, adminData.email]
+                );
+
+                console.log('✅ Admin account updated');
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    async ensureUsersTable(connection) {
+        try {
+            // Check if users table exists
+            const [tables] = await connection.execute(
+                `SHOW TABLES LIKE 'users'`
+            );
+
+            if (tables.length === 0) {
+                console.log('📦 Creating users table...');
+
+                await connection.execute(`
+                    CREATE TABLE users (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL,
+                        email VARCHAR(100) UNIQUE NOT NULL,
+                        password VARCHAR(255) NOT NULL,
+                        phone VARCHAR(20),
+                        role ENUM('user', 'admin') DEFAULT 'user',
+                        preferences JSON DEFAULT NULL,
+                        last_login TIMESTAMP NULL,
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        
+                        INDEX idx_email (email),
+                        INDEX idx_role (role),
+                        INDEX idx_created_at (created_at)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                `);
+
+                console.log('✅ Users table created');
+            }
+
+        } catch (error) {
+            console.error('❌ Error creating users table:', error.message);
+            throw error;
+        }
+    }
+
+    async showSuccessInfo(adminData, hashedPassword, salt) {
+        console.log('\n══════════════════════════════════════════');
+        console.log('🎉 ADMIN ACCOUNT CREATED SUCCESSFULLY');
+        console.log('══════════════════════════════════════════');
+        console.log('📋 Account Details:');
+        console.log(`   👤 Name: ${adminData.name}`);
+        console.log(`   📧 Email: ${adminData.email}`);
+        console.log(`   📱 Phone: ${adminData.phone}`);
+        console.log(`   🔑 Password: ${adminData.password}`);
+        console.log(`   👑 Role: Admin`);
+
+        console.log('\n🔐 Security Information:');
+        console.log(`   Salt: ${salt}`);
+        console.log(`   Hash: ${hashedPassword}`);
+
+        console.log('\n📝 SQL Commands:');
+        console.log('══════════════════════════════════════════');
+        console.log('-- Direct INSERT command:');
+        console.log(`INSERT INTO users (name, email, password, phone, role, is_active) VALUES ('${adminData.name}', '${adminData.email}', '${hashedPassword}', '${adminData.phone}', 'admin', true);`);
+
+        console.log('\n-- For manual testing (bcrypt compare):');
+        console.log(`import bcrypt from 'bcryptjs';`);
+        console.log(`const password = '${adminData.password}';`);
+        console.log(`const hash = '${hashedPassword}';`);
+        console.log(`bcrypt.compare(password, hash).then(result => console.log('Match:', result));`);
+        console.log('══════════════════════════════════════════\n');
+    }
+
+    async testAdminAccount(connection, email) {
+        try {
+            console.log('🧪 Testing admin account...');
+
+            // Verify admin was created
+            const [admin] = await connection.execute(
+                'SELECT id, name, email, role, is_active FROM users WHERE email = ?',
+                [email]
+            );
+
+            if (admin.length > 0) {
+                console.log('✅ Admin account verified:');
+                console.log(`   ID: ${admin[0].id}`);
+                console.log(`   Name: ${admin[0].name}`);
+                console.log(`   Email: ${admin[0].email}`);
+                console.log(`   Role: ${admin[0].role}`);
+                console.log(`   Active: ${admin[0].is_active ? 'Yes' : 'No'}`);
+
+                // Test password verification
+                const testPassword = await this.askQuestion('\n🔐 Test password verification? (y/N): ');
+                if (testPassword.toLowerCase() === 'y') {
+                    const testPass = await this.askQuestion('   Enter password to test: ', true);
+
+                    // Get stored hash
+                    const [userWithPass] = await connection.execute(
+                        'SELECT password FROM users WHERE email = ?',
+                        [email]
+                    );
+
+                    if (userWithPass.length > 0) {
+                        const isValid = await bcrypt.compare(testPass, userWithPass[0].password);
+                        console.log(`   Password match: ${isValid ? '✅ Correct' : '❌ Incorrect'}`);
+                    }
+                }
+            } else {
+                console.log('❌ Admin account not found in database');
+            }
+
+        } catch (error) {
+            console.log('⚠️  Could not test admin account:', error.message);
+        }
+    }
+}
+
+// Utility function untuk generate password hash saja
+async function generatePasswordHash(password) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    return { hashedPassword, salt };
+}
+
+// Function untuk create admin account secara programmatic
+async function createAdminAccount(adminData) {
+    const creator = new AdminCreator();
+    // Method createAdmin tidak ada, jadi kita buat wrapper
+    const connection = await creator.connectToDatabase();
+    const { hashedPassword } = await generatePasswordHash(adminData.password);
+
+    const [result] = await connection.execute(
+        `INSERT INTO users (name, email, password, phone, role, is_active) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [adminData.name, adminData.email, hashedPassword, adminData.phone, 'admin', true]
+    );
+
+    await connection.end();
+    return result;
+}
+
+// Run if this file is executed directly
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    const creator = new AdminCreator();
+    creator.run().catch(console.error);
+}
+
+// Export untuk digunakan di file lain
+export { generatePasswordHash, createAdminAccount };
+export default AdminCreator;

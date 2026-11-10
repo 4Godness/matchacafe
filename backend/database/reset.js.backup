@@ -1,0 +1,58 @@
+// database/reset.js
+const mysql = require('mysql2/promise');
+require('dotenv').config();
+
+async function resetDatabase() {
+    console.log('\n⚠️  WARNING: This will DROP the entire database!');
+    console.log('   All data will be permanently deleted.\n');
+
+    const readline = require('readline');
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    rl.question('Type "RESET" to confirm: ', async (answer) => {
+        if (answer !== 'RESET') {
+            console.log('❌ Reset cancelled.');
+            rl.close();
+            process.exit(0);
+        }
+
+        try {
+            const connection = await mysql.createConnection({
+                host: process.env.DB_HOST,
+                user: process.env.DB_USER,
+                password: process.env.DB_PASS,
+                port: process.env.DB_PORT
+            });
+
+            console.log('\n🔨 Resetting database...');
+
+            // Drop database
+            await connection.execute(`DROP DATABASE IF EXISTS ${process.env.DB_NAME}`);
+            console.log(`✅ Dropped database: ${process.env.DB_NAME}`);
+
+            // Create fresh database
+            await connection.execute(
+                `CREATE DATABASE ${process.env.DB_NAME} 
+                 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+            );
+            console.log(`✅ Created fresh database: ${process.env.DB_NAME}`);
+
+            await connection.end();
+
+            console.log('\n🎉 Database reset complete!');
+            console.log('💡 Run `npm run db:setup` to set up the schema.');
+
+        } catch (error) {
+            console.error('❌ Reset failed:', error.message);
+        } finally {
+            rl.close();
+        }
+    });
+}
+
+if (require.main === module) {
+    resetDatabase();
+}

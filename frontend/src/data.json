@@ -1,0 +1,80 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "bangwindah",
+      "password": "password123",
+      "name": "Bang Windah",
+      "phone": "08123456789",
+      "email": "bangwindah@example.com"
+    },
+    {
+      "id": 2,
+      "username": "usertest", 
+      "password": "test123",
+      "name": "User Test",
+      "phone": "08123456780",
+      "email": "usertest@example.com"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "Capuccino",
+      "price": 20000,
+      "category": "minuman",
+      "image": "strawberry-cake-3.png",
+      "description": "Coffee with milk foam",
+      "rating": 4.5
+    },
+    {
+      "id": 2,
+      "name": "Strawberry Matcha Cake",
+      "price": 35000,
+      "category": "dessert-snack",
+      "image": "strawberry-cake-2.png",
+      "description": "Delicious strawberry matcha flavor",
+      "rating": 4.8
+    },
+    {
+      "id": 3,
+      "name": "Pizza",
+      "price": 45000,
+      "category": "makanan",
+      "image": "image.png",
+      "description": "Italian style pizza",
+      "rating": 4.3
+    },
+    {
+      "id": 4,
+      "name": "Strawberry Milkshake",
+      "price": 25000,
+      "category": "minuman",
+      "image": "strawberry-cake.png",
+      "description": "Refreshing strawberry milkshake",
+      "rating": 4.6
+    },
+    {
+      "id": 5,
+      "name": "Coklat Croissant",
+      "price": 18000,
+      "category": "dessert-snack",
+      "image": "strawberry-cake-4.png",
+      "description": "Flaky croissant with chocolate",
+      "rating": 4.4
+    }
+  ],
+  "categories": [
+    { "id": 1, "name": "All" },
+    { "id": 2, "name": "Makanan" },
+    { "id": 3, "name": "Minuman" },
+    { "id": 4, "name": "Dessert & Snack" }
+  ],
+  "paymentMethods": [
+    { "id": 1, "name": "QRIS", "type": "qris", "icon": "qris" },
+    { "id": 2, "name": "Bayar di Kasir", "type": "cash", "icon": "cash" }
+  ],
+  "cartItems": [],
+  "favorites": [],
+  "orders": []
+}

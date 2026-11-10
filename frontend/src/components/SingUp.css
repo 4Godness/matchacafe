@@ -1,0 +1,353 @@
+.sing-up {
+  background: linear-gradient(135deg, #2e4f21 0%, #3a6b2a 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.sing-up-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px 30px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.sing-up-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #2e4f21;
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding: 8px 0;
+  transition: color 0.3s ease;
+}
+
+.back-button:hover {
+  color: #1f3516;
+  text-decoration: underline;
+}
+
+.back-arrow {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.logo {
+  margin-bottom: 20px;
+}
+
+.logo-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  color: #2e4f21;
+}
+
+.logo-text {
+  font-family: "Lusitana", serif;
+  font-size: 28px;
+  color: #2e4f21;
+  font-weight: 400;
+}
+
+.sing-up-subtitle {
+  color: #666;
+  font-size: 14px;
+}
+
+.sing-up-form {
+  margin-bottom: 30px;
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 14px;
+  border: 1px solid #fcc;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #e1e1e1;
+  border-radius: 10px;
+  font-size: 16px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  border-color: #2e4f21;
+  background: #f9fff9;
+  box-shadow: 0 0 0 3px rgba(46, 79, 33, 0.1);
+}
+
+.sing-up-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.sing-up-footer {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid #e1e1e1;
+}
+
+.login-text {
+  color: #666;
+  font-size: 14px;
+}
+
+.login-link {
+  color: #2e4f21;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .sing-up-container {
+    padding: 30px 20px;
+    margin: 10px;
+  }
+}
+
+/* SingUp.css - Tambahkan bagian ini */
+.form-input.error {
+  border-color: #ff3860;
+  background-color: #fff5f5;
+}
+
+.field-error {
+  color: #ff3860;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+  text-align: left;
+}
+
+.server-error {
+  background-color: #fff5f5;
+  border: 1px solid #ff3860;
+  color: #ff3860;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.error-icon {
+  font-size: 16px;
+}
+
+.password-hints {
+  margin-top: 5px;
+  text-align: left;
+}
+
+.password-hints small {
+  color: #666;
+  font-size: 12px;
+}
+
+.terms-section {
+  margin: 20px 0;
+  text-align: left;
+}
+
+.terms-checkbox {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+}
+
+.terms-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkmark {
+  position: relative;
+  height: 18px;
+  width: 18px;
+  background-color: #fff;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  margin-right: 10px;
+  margin-top: 2px;
+}
+
+.terms-checkbox input:checked~.checkmark {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.terms-checkbox input:checked~.checkmark:after {
+  display: block;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.terms-link {
+  color: #3498db;
+  text-decoration: none;
+}
+
+.terms-link:hover {
+  text-decoration: underline;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 25px 0;
+}
+
+.divider:before,
+.divider:after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.divider-text {
+  padding: 0 15px;
+  color: #666;
+  font-size: 14px;
+}
+
+.social-login {
+  margin-bottom: 30px;
+}
+
+.social-text {
+  color: #666;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.social-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.social-btn {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.social-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.social-icon {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.google-btn {
+  border-color: #db4437;
+  color: #db4437;
+}
+
+.google-btn:hover {
+  background-color: #fce8e6;
+}
+
+.facebook-btn {
+  border-color: #4267B2;
+  color: #4267B2;
+}
+
+.facebook-btn:hover {
+  background-color: #e7f3ff;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sing-up-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sing-up { min-height: 100svh; padding: clamp(18px, 5vw, 48px); background: radial-gradient(ellipse at 15% 15%, #dce9d4, transparent 35%), linear-gradient(135deg, #eef3e9, #f8f8f4 55%, #e9f0e6); }
+.sing-up-container { width: min(100%, 460px); max-height: min(92svh, 900px); padding: clamp(24px, 5vw, 42px); border: 1px solid #fff; border-radius: 25px; background: rgba(255,255,255,.9); box-shadow: 0 24px 70px rgba(35,55,38,.13); }
+.sing-up .logo-text { color: #203f2a; font-family: 'Manrope', sans-serif; font-weight: 800; }
+@media (max-width: 480px) { .sing-up { align-items: flex-start; padding: max(16px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom)); } .sing-up-container { margin: auto 0; border-radius: 21px; } }

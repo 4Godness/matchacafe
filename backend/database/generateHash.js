@@ -1,0 +1,67 @@
+﻿// database/generateHash.js - ES Module version
+import bcrypt from 'bcryptjs';
+import readline from 'readline';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+async function generateHash() {
+    console.clear();
+    console.log('══════════════════════════════════════════');
+    console.log('🔐  PASSWORD HASH GENERATOR');
+    console.log('══════════════════════════════════════════\n');
+
+    try {
+        rl.question('Enter password to hash (default: admin123): ', async (password) => {
+            password = password || 'admin123';
+
+            console.log('\nGenerating hash for password:', password);
+
+            // Generate salt and hash
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+
+            console.log('\n══════════════════════════════════════════');
+            console.log('✅ HASH GENERATED SUCCESSFULLY');
+            console.log('══════════════════════════════════════════');
+            console.log(`🔐 Plain Password: ${password}`);
+            console.log(`🧂 Salt: ${salt}`);
+            console.log(`🔑 Hashed Password: ${hashedPassword}`);
+            console.log('══════════════════════════════════════════\n');
+
+            console.log('📝 SQL INSERT command:');
+            console.log(`INSERT INTO users (name, email, password, phone) VALUES ('Admin', 'admin@matcha.com', '${hashedPassword}', '08123456789');`);
+
+            console.log('\n📝 Node.js verification code:');
+            console.log('```javascript');
+            console.log(`import bcrypt from 'bcryptjs';`);
+            console.log(`const password = '${password}';`);
+            console.log(`const hash = '${hashedPassword}';`);
+            console.log(`bcrypt.compare(password, hash).then(isMatch => {`);
+            console.log(`    console.log('Password match:', isMatch);`);
+            console.log(`});`);
+            console.log('```');
+
+            console.log('\n🎉 Done!');
+            rl.close();
+        });
+
+    } catch (error) {
+        console.error('❌ Error:', error);
+        rl.close();
+    }
+}
+
+// Run if this file is executed directly
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    generateHash();
+}
+
+export default generateHash;
